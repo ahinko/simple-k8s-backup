@@ -28,8 +28,3 @@ repos:
     rev: 0.2.0
     hooks:
       - id: fix-smartquotes
-
-  - repo: https://github.com/IamTheFij/docker-pre-commit.git
-    rev: v2.0.1
-    hooks:
-      - id: docker-compose-check
