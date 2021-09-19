@@ -56,7 +56,7 @@ backup () {
     signature=$(echo -en "${_signature}" | openssl sha1 -hmac "${MINIO_SECRET_KEY}" -binary | base64)
 
     # Upload timestamped file to Minio/S3
-    curl -k -v -X PUT -T "/${BACKUP_FILE} > ${LATEST_FILE}" \
+    curl -k -v -X PUT -T "/${BACKUP_FILE}" \
         -H "Host: $MINIO_ENDPOINT" \
         -H "Date: ${date}" \
         -H "Content-Type: ${content_type}" \
