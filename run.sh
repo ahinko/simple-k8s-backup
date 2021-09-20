@@ -6,7 +6,7 @@ set -o nounset
 EXCLUDE_ARGS=${EXCLUDE_ARGS:-""}
 FORCE_RESTORE=${FORCE_RESTORE:-0}
 RESTORE_FILE="${RESTORE_FILE:-latest.tgz}"
-LOCAL_PATH=${BACKUP_NAME}
+LOCAL_PATH="/${BACKUP_NAME}"
 BACKUP_FILE=${BACKUP_NAME}-$(date +%Y%m%d_%H%M%S).tgz
 LATEST_FILE="latest.tgz"
 
@@ -19,7 +19,8 @@ backup () {
     # Archive everything in the local path. Use EXCLUDE_ARGS to exclude
     # anything that should be ignored by the backup.
     set +e
-    tar "${EXCLUDE_ARGS}" -zcf "/${BACKUP_FILE}" -C "${LOCAL_PATH}" .
+    tar "${EXCLUDE_ARGS}" -zcf "/${BACKUP_FILE}" -C ${LOCAL_PATH} .
+
     exitcode=$?
 
     if [ "$exitcode" != "1" ] && [ "$exitcode" != "0" ]; then
@@ -118,7 +119,7 @@ restore () {
 
 # Make sure that the local path actually exists. If it does not then something is wrong.
 # We can't just create the missing directory since it should already be mounted in to the container.
-if [ ! -d "${LOCAL_PATH}" ]; then
+if [ ! -d ${LOCAL_PATH} ]; then
     echo "${LOCAL_PATH} does not exist. Aborting.";
     exit 1;
 fi
@@ -129,7 +130,7 @@ if [ "${FORCE_RESTORE}" == 1 ]; then
 fi
 
 # Check if the local folder is empty or not.
-if [ -z "$(ls -A "${LOCAL_PATH}")" ]; then
+if [ -z "$(ls -A ${LOCAL_PATH})" ]; then
     # If it's empty, then we should restore a backup
     restore
 else
