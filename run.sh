@@ -70,7 +70,7 @@ restore () {
     echo "Restoring ${RESTORE_FILE} to ${LOCAL_PATH}"
 
     # Where should the file be downloaded from
-    resource="/${MINIO_BUCKET}/${RESTORE_FILE}"
+    resource="/${BUCKET}/${RESTORE_FILE}"
 
     # Set content type
     content_type="text/plain"
@@ -79,27 +79,41 @@ restore () {
     date=$(date -R)
 
     # Prepare signature
-    _signature="GET\n\n${content_type}\n${date}\n${resource}"
+    _signature="HEAD\n\n${content_type}\n${date}\n${resource}"
     signature=$(echo -en "${_signature}" | openssl sha1 -hmac "${MINIO_SECRET_KEY}" -binary | base64)
 
-    # Download file from Minio/S3
-    curl -k -v -X GET --output "${RESTORE_FILE}" \
+    # Check if the file exists and can be downloaded
+    if curl --head --fail --silent \
         -H "Host: $MINIO_ENDPOINT" \
         -H "Date: ${date}" \
         -H "Content-Type: ${content_type}" \
         -H "Authorization: AWS ${MINIO_ACCESS_KEY}:${signature}" \
             "https://$MINIO_ENDPOINT${resource}"
+    then
+        # File exists so lets download and restore it
+        _signature="GET\n\n${content_type}\n${date}\n${resource}"
+        signature=$(echo -en "${_signature}" | openssl sha1 -hmac "${MINIO_SECRET_KEY}" -binary | base64)
 
-    # TODO: check if the downloaded file was empty or not
+        # Download file from Minio/S3
+        curl -k -v -X GET --output "${RESTORE_FILE}" \
+            -H "Host: $MINIO_ENDPOINT" \
+            -H "Date: ${date}" \
+            -H "Content-Type: ${content_type}" \
+            -H "Authorization: AWS ${MINIO_ACCESS_KEY}:${signature}" \
+                "https://$MINIO_ENDPOINT${resource}"
 
-    # Remove all old files before restoring
-    rm -rf "${LOCAL_PATH:?}/*"
+        # Remove all old files before restoring
+        rm -rf ${LOCAL_PATH}/*
 
-    # Extract archive to provided path
-    tar -C "${LOCAL_PATH} -zxvf ${RESTORE_FILE}"
+        # Extract archive to provided path
+        tar -zxvf ${RESTORE_FILE} -C ${LOCAL_PATH}
 
-    # Delete the downloaded file
-    rm -rf "${RESTORE_FILE}"
+        # Delete the downloaded file
+        rm -rf "${RESTORE_FILE}"
+    else
+        echo "File does not exist and can't therefor be downloaded and restored. Exiting..."
+        exit 1
+    fi
 }
 
 # Make sure that the local path actually exists. If it does not then something is wrong.
