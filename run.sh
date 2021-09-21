@@ -19,7 +19,7 @@ backup () {
     # Archive everything in the local path. Use EXCLUDE_ARGS to exclude
     # anything that should be ignored by the backup.
     set +e
-    tar "${EXCLUDE_ARGS}" -zcf "/${BACKUP_FILE}" -C ${LOCAL_PATH} .
+    tar ${EXCLUDE_ARGS} -zcf "/${BACKUP_FILE}" -C ${LOCAL_PATH} .
 
     exitcode=$?
 
