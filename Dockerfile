@@ -1,6 +1,6 @@
 FROM quay.io/minio/mc:RELEASE.2021-10-07T04-19-58Z
 
-RUN microdnf update && microdnf install -y tar
+RUN microdnf update && microdnf install -y tar gzip
 
 COPY run.sh /
 
