@@ -60,7 +60,6 @@ spec:
             - name: backup-home-assistant
               image: ghcr.io/ahinko/simple-k8s-backup:latest
               args:
-                - /bin/sh
                 - /run.sh
               env:
                 - name: MINIO_ACCESS_KEY
