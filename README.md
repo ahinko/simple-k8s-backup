@@ -1,6 +1,6 @@
 # simple-k8s-backup
 
-A simple Docker container for backing up and restoring folders from within the container. This script is highly opinionated and tailored for my needs. **I take no responsibility so use this at your own risk.**
+A simple Docker container for backing up and restoring folders from within the container to a Minio server. This script is highly opinionated and tailored for my needs. **I take no responsibility so use this at your own risk.**
 
 My use case:
 
@@ -14,7 +14,7 @@ How the backup script in the container works:
   * If the directory contains something it will create an archive of all the content in the directory and then upload it to `MINIO_BUCKET/BACKUP_NAME`. It will upload two files:
     * One with a timestamp in the file name (`BACKUP_NAME`-current_date_time.tgz)
     * and one file named `latest.tgz`
-  * If the directory was empty it will either download `latest.tgz` or `RESTORE_FILE` (if specified) and restore it to `LOCAL_PATH`
+  * If the directory was empty it will either download `latest.tgz` or `RESTORE_FILENAME` (if specified) and restore it to `LOCAL_PATH`
 * It's also possible to force a restore by setting `FORCE_RESTORE` to `1`
 
 ## Enviroment variables
@@ -25,15 +25,17 @@ How the backup script in the container works:
 
 * `MINIO_SECRET_KEY`
 
-* `MINIO_ENDPOINT` Hostname and port (if needed). Example: minio.local.dev:9000
+* `MINIO_HOST` Hostname and port (if needed). Example: minio.local.dev:9000
 
-* `MINIO_BUCKET` Bucket name. A subfolder based on `BACKUP_NAME` will be created. So setting `MINIO_BUCKET` to `backup` and `BACKUP_NAME` to `home-assistant` would upload the backup to `backup/home-assistant`
-
-* `RESTORE_FILE` The filename of the backup file that should be downloaded and restored. (restore only)
-
-* `FORCE_RESTORE` Set to 1 to force a restore (restore only)
+* `MINIO_BUCKET` Bucket name (must be lowercase). A subfolder based on `BACKUP_NAME` will be created. So setting `MINIO_BUCKET` to `backup` and `BACKUP_NAME` to `home-assistant` would upload the backup to `backup/home-assistant`
 
 * `EXCLUDE_ARGS` can be used to exclude files or directories from the backup. Example: `--exclude ./sqllite.db --exclude ./.vscode`
+
+* `DELETE_OLDER_THAN` determines how long files should be stored. On each backup files older than this value will be deleted. Defaults to: 30d
+
+* `RESTORE_FILENAME` The filename of the backup file that should be downloaded and restored. (restore only)
+
+* `FORCE_RESTORE` Set to 1 to force a restore (restore only)
 
 ## Example
 Here is an example setting up a cronjob in Kubernetes:
@@ -65,12 +67,14 @@ spec:
                   value: "some-access-key"
                 - name: MINIO_SECRET_KEY
                   value: "the-secret-key"
-                - name: MINIO_ENDPOINT
+                - name: MINIO_HOST
                   value: "minio.local.dev"
                 - name: MINIO_BUCKET
                   value: "backup"
                 - name: BACKUP_NAME
                   value: "home-assistant"
+                - name: DELETE_OLDER_THAN
+                  value: "30d"
                 - name: EXCLUDE_ARGS
                   value: "--exclude ./home-assistant_v2.db --exclude ./core"
               volumeMounts:

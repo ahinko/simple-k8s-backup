@@ -1,6 +1,4 @@
-FROM alpine:3.14.2
-
-RUN apk add --no-cache curl openssl openssl-dev
+FROM quay.io/minio/mc:RELEASE.2021-09-23T05-44-03Z
 
 COPY run.sh /
 

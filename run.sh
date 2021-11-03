@@ -2,24 +2,39 @@
 
 set -o nounset
 
-# Calculate some variables
+BACKUP_NAME=mytest
+
+MINIO_HOST=https://minio.komhem.xyz
+MINIO_ACCESS_KEY=yGuj2GZbtJkdXoLFYGQTJ4LN
+MINIO_SECRET_KEY=kQcZABHGr8fds9GJCYeCg.uHH3a4
+MINIO_BUCKET=newtestbucket
+
+# Backup options
 EXCLUDE_ARGS=${EXCLUDE_ARGS:-""}
+DELETE_OLDER_THAN=${DELETE_OLDER_THAN:-"30d"}
+
+# Restore options
 FORCE_RESTORE=${FORCE_RESTORE:-0}
-RESTORE_FILE="${RESTORE_FILE:-latest.tgz}"
-LOCAL_PATH="/${BACKUP_NAME}"
-BACKUP_FILE=${BACKUP_NAME}-$(date +%Y%m%d_%H%M%S).tgz
-LATEST_FILE="latest.tgz"
+RESTORE_FILENAME="${RESTORE_FILENAME:-latest.tgz}"
 
-BUCKET=${MINIO_BUCKET}/${BACKUP_NAME}
+# Calculate some paths
+LOCAL_PATH="./${BACKUP_NAME}"
+BACKUP_FILENAME=${BACKUP_NAME}-$(date +%Y%m%d_%H%M%S).tgz
+LATEST_FILENAME="latest.tgz"
 
-# Do he actual backup and send the file to external storage
+# Configure minio cli
+mc alias set minio ${MINIO_HOST} ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY}
+
+# Make sure bucket exists
+mc mb --ignore-existing minio/${MINIO_BUCKET}
+
 backup () {
     echo "Creating backup of ${LOCAL_PATH}"
 
     # Archive everything in the local path. Use EXCLUDE_ARGS to exclude
     # anything that should be ignored by the backup.
     set +e
-    tar ${EXCLUDE_ARGS} -zcf "/${BACKUP_FILE}" -C ${LOCAL_PATH} .
+    tar ${EXCLUDE_ARGS} -zcf "./${BACKUP_FILENAME}" -C ${LOCAL_PATH} .
 
     exitcode=$?
 
@@ -28,93 +43,27 @@ backup () {
     fi
     set -e
 
-    # Where should the file be stored
-    resource="/${BUCKET}/${BACKUP_FILE}"
+    mc cp "./${BACKUP_FILENAME}" minio/${MINIO_BUCKET}/${BACKUP_NAME}/${BACKUP_FILENAME}
+    mc cp "./${BACKUP_FILENAME}" minio/${MINIO_BUCKET}/${BACKUP_NAME}/${LATEST_FILENAME}
 
-    # Set content type
-    content_type="application/octet-stream"
+    rm "./${BACKUP_FILENAME}"
 
-    # Get current date
-    date=$(date -R)
-
-    # Prepare signature
-    _signature="PUT\n\n${content_type}\n${date}\n${resource}"
-    signature=$(echo -en "${_signature}" | openssl sha1 -hmac "${MINIO_SECRET_KEY}" -binary | base64)
-
-    # Upload timestamped file to Minio/S3
-    curl -k -v -X PUT -T "/${BACKUP_FILE}" \
-        -H "Host: $MINIO_ENDPOINT" \
-        -H "Date: ${date}" \
-        -H "Content-Type: ${content_type}" \
-        -H "Authorization: AWS ${MINIO_ACCESS_KEY}:${signature}" \
-            "https://$MINIO_ENDPOINT${resource}"
-
-    # Also upload file as lastest.*
-    resource="/${BUCKET}/${LATEST_FILE}"
-
-   # Prepare signature
-    _signature="PUT\n\n${content_type}\n${date}\n${resource}"
-    signature=$(echo -en "${_signature}" | openssl sha1 -hmac "${MINIO_SECRET_KEY}" -binary | base64)
-
-    # Upload timestamped file to Minio/S3
-    curl -k -v -X PUT -T "/${BACKUP_FILE}" \
-        -H "Host: $MINIO_ENDPOINT" \
-        -H "Date: ${date}" \
-        -H "Content-Type: ${content_type}" \
-        -H "Authorization: AWS ${MINIO_ACCESS_KEY}:${signature}" \
-            "https://$MINIO_ENDPOINT${resource}"
-
-    rm "/${BACKUP_FILE}"
+    mc rm -r --force --older-than ${DELETE_OLDER_THAN} minio/${MINIO_BUCKET}/${BACKUP_NAME}/
 }
 
 restore () {
-    echo "Restoring ${RESTORE_FILE} to ${LOCAL_PATH}"
+    echo "Restoring ${RESTORE_FILENAME} to ${LOCAL_PATH}"
 
-    # Where should the file be downloaded from
-    resource="/${BUCKET}/${RESTORE_FILE}"
+    mc cp minio/${MINIO_BUCKET}/${BACKUP_NAME}/${RESTORE_FILENAME} ./${RESTORE_FILENAME}
 
-    # Set content type
-    content_type="text/plain"
+    # Remove all old files before restoring
+    rm -rf ${LOCAL_PATH}/*
 
-    # Get current date
-    date=$(date -R)
+    # Extract archive to provided path
+    tar -zxvf ${RESTORE_FILENAME} -C ${LOCAL_PATH}
 
-    # Prepare signature
-    _signature="HEAD\n\n${content_type}\n${date}\n${resource}"
-    signature=$(echo -en "${_signature}" | openssl sha1 -hmac "${MINIO_SECRET_KEY}" -binary | base64)
-
-    # Check if the file exists and can be downloaded
-    if curl --head --fail --silent \
-        -H "Host: $MINIO_ENDPOINT" \
-        -H "Date: ${date}" \
-        -H "Content-Type: ${content_type}" \
-        -H "Authorization: AWS ${MINIO_ACCESS_KEY}:${signature}" \
-            "https://$MINIO_ENDPOINT${resource}"
-    then
-        # File exists so lets download and restore it
-        _signature="GET\n\n${content_type}\n${date}\n${resource}"
-        signature=$(echo -en "${_signature}" | openssl sha1 -hmac "${MINIO_SECRET_KEY}" -binary | base64)
-
-        # Download file from Minio/S3
-        curl -k -v -X GET --output "${RESTORE_FILE}" \
-            -H "Host: $MINIO_ENDPOINT" \
-            -H "Date: ${date}" \
-            -H "Content-Type: ${content_type}" \
-            -H "Authorization: AWS ${MINIO_ACCESS_KEY}:${signature}" \
-                "https://$MINIO_ENDPOINT${resource}"
-
-        # Remove all old files before restoring
-        rm -rf ${LOCAL_PATH}/*
-
-        # Extract archive to provided path
-        tar -zxvf ${RESTORE_FILE} -C ${LOCAL_PATH}
-
-        # Delete the downloaded file
-        rm -rf "${RESTORE_FILE}"
-    else
-        echo "File does not exist and can't therefor be downloaded and restored. Exiting..."
-        exit 1
-    fi
+    # Delete the downloaded file
+    rm -rf "${RESTORE_FILENAME}"
 }
 
 # Make sure that the local path actually exists. If it does not then something is wrong.
@@ -125,6 +74,7 @@ if [ ! -d ${LOCAL_PATH} ]; then
 fi
 
 if [ "${FORCE_RESTORE}" == 1 ]; then
+    echo "Force restore"
     restore
     exit 0
 fi
