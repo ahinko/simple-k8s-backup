@@ -1,4 +1,4 @@
-FROM quay.io/minio/mc:RELEASE.2021-09-23T05-44-03Z
+FROM quay.io/minio/mc:RELEASE.2021-10-07T04-19-58Z
 
 COPY run.sh /
 
