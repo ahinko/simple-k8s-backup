@@ -1,4 +1,4 @@
-FROM quay.io/minio/mc:RELEASE.2022-01-29T01-03-27Z
+FROM quay.io/minio/mc:RELEASE.2022-02-02T02-03-24Z
 
 RUN microdnf update && microdnf install -y tar gzip
 
