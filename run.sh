@@ -3,7 +3,7 @@
 set -o nounset
 
 # Backup options
-EXCLUDE_ARGS=${EXCLUDE_ARGS:-""}
+EXCLUDE=${EXCLUDE:-""}
 DELETE_OLDER_THAN=${DELETE_OLDER_THAN:-"30d"}
 
 # Restore options
@@ -14,6 +14,12 @@ RESTORE_FILENAME="${RESTORE_FILENAME:-latest.tgz}"
 LOCAL_PATH="./${BACKUP_NAME}"
 BACKUP_FILENAME=${BACKUP_NAME}-$(date +%Y%m%d_%H%M%S).tgz
 LATEST_FILENAME="latest.tgz"
+
+# Convert exclude parameter to tar args
+EXCLUDE_ARGS=""
+if [ -z "$EXCLUDE" ]; then
+    EXCLUDE_ARGS="--exclude ${EXCLUDE// / --exclude }"
+fi
 
 # Configure minio cli
 mc alias set minio ${MINIO_HOST} ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY}

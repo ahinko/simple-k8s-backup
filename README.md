@@ -29,7 +29,7 @@ How the backup script in the container works:
 
 * `MINIO_BUCKET` Bucket name (must be lowercase). A subfolder based on `BACKUP_NAME` will be created. So setting `MINIO_BUCKET` to `backup` and `BACKUP_NAME` to `home-assistant` would upload the backup to `backup/home-assistant`
 
-* `EXCLUDE_ARGS` can be used to exclude files or directories from the backup. Example: `--exclude ./sqllite.db --exclude ./.vscode`
+* `EXCLUDE` can be used to exclude files or directories from the backup. Must be written as a space separated string. Example: `./sqlite.db ./.vscode`
 
 * `DELETE_OLDER_THAN` determines how long files should be stored. On each backup files older than this value will be deleted. Defaults to: 30d
 
@@ -74,8 +74,8 @@ spec:
                   value: "home-assistant"
                 - name: DELETE_OLDER_THAN
                   value: "30d"
-                - name: EXCLUDE_ARGS
-                  value: "--exclude ./home-assistant_v2.db --exclude ./core"
+                - name: EXCLUDE
+                  value: "./home-assistant_v2.db ./core"
               volumeMounts:
                 - name: home-assistant-persistent-storage
                   mountPath: /home-assistant
