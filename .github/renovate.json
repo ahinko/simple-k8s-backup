@@ -2,7 +2,7 @@
   "enabled": true,
   "timezone": "Europe/Stockholm",
   "dependencyDashboard": true,
-  "dependencyDashboardTitle": "Renovate Dashboard",
+  "dependencyDashboardTitle": "🤖 Renovate Dashboard",
   "suppressNotifications": ["prIgnoreNotification"],
   "rebaseWhen": "conflicted",
   "assignees": ["@ahinko"],

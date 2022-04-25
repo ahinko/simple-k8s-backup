@@ -28,3 +28,8 @@ repos:
     rev: 0.2.0
     hooks:
       - id: fix-smartquotes
+
+  - repo: https://github.com/zricethezav/gitleaks
+    rev: v8.8.1
+    hooks:
+      - id: gitleaks

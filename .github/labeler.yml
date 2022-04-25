@@ -1,0 +1,11 @@
+---
+
+area/ci:
+  - ".github/**/*"
+area/docs:
+  - "docs/**/*"
+  - "README.md"
+area/docker:
+  - "Dockerfile"
+area/script:
+  - "run.sh"
