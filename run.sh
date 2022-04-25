@@ -18,6 +18,13 @@ LATEST_FILENAME="latest.tgz"
 # Configure minio cli
 mc alias set minio ${MINIO_HOST} ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY}
 
+# Check if we can connect to the minio server
+mc admin info minio &>/dev/null
+if [ $? != 0 ] ; then
+    echo "Could not connect to minio server."
+    exit 1;
+fi
+
 # Make sure bucket exists
 mc mb --ignore-existing minio/${MINIO_BUCKET}
 
@@ -37,11 +44,24 @@ backup () {
     set -e
 
     mc cp "./${BACKUP_FILENAME}" minio/${MINIO_BUCKET}/${BACKUP_NAME}/${BACKUP_FILENAME}
+    if [ $? != 0 ] ; then
+        echo "Failed to upload timestamped backup"
+        exit 1;
+    fi
+
     mc cp "./${BACKUP_FILENAME}" minio/${MINIO_BUCKET}/${BACKUP_NAME}/${LATEST_FILENAME}
+    if [ $? != 0 ] ; then
+        echo "Failed to upload latest backup"
+        exit 1;
+    fi
 
     rm "./${BACKUP_FILENAME}"
 
     mc rm -r --force --older-than ${DELETE_OLDER_THAN} minio/${MINIO_BUCKET}/${BACKUP_NAME}/
+    if [ $? != 0 ] ; then
+        echo "Failed to delete old backups"
+        exit 1;
+    fi
 }
 
 restore () {
