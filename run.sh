@@ -19,15 +19,13 @@ HEALTCHECK_URL=${HEALTCHECK_URL:-""}
 
 # Convert exclude parameter to tar args
 EXCLUDE_ARGS=""
-if [ -z "$EXCLUDE" ]; then
+if [ "$EXCLUDE" != "" ]; then
     EXCLUDE_ARGS="--exclude ${EXCLUDE// / --exclude }"
 fi
 
 # Configure minio cli
 mc alias set minio ${MINIO_HOST} ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY}
 
-# Check if we can connect to the minio server
-mc admin info minio &>/dev/null
 if [ $? != 0 ] ; then
     echo "Could not connect to minio server."
     exit 1;
@@ -35,6 +33,10 @@ fi
 
 # Make sure bucket exists
 mc mb --ignore-existing minio/${MINIO_BUCKET}
+if [ $? != 0 ] ; then
+    echo "Could create bucket, might be a connection problem."
+    exit 1;
+fi
 
 backup () {
     echo "Creating backup of ${LOCAL_PATH}"
@@ -108,7 +110,8 @@ else
     # If it isn't empty then we should do a backup
     backup
 
-    if [ -z "$HEALTCHECK_URL" ]; then
+    if [ "$HEALTCHECK_URL" != "" ]; then
+        echo "Curling $HEALTCHECK_URL"
         curl -fsS -m 10 --retry 5 -o /dev/null $HEALTCHECK_URL
     fi
 fi
