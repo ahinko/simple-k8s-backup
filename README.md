@@ -37,6 +37,8 @@ How the backup script in the container works:
 
 * `FORCE_RESTORE` Set to 1 to force a restore (restore only)
 
+* `HEALTCHECK_URL` An URL that should be called after a backup has completed successfully
+
 ## Example
 Here is an example setting up a cronjob in Kubernetes:
 
@@ -76,6 +78,8 @@ spec:
                   value: "30d"
                 - name: EXCLUDE
                   value: "./home-assistant_v2.db ./core"
+                - name: HEALTCHECK_URL
+                  value: "https://url.to.ping"
               volumeMounts:
                 - name: home-assistant-persistent-storage
                   mountPath: /home-assistant
