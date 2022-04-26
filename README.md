@@ -19,6 +19,8 @@ How the backup script in the container works:
 
 ## Enviroment variables
 
+* `TZ` Set timezone
+
 * `BACKUP_NAME` Filename used by the backup process to name the archived file. Example: "home-assistant". The script will add the current date and time to the filename. (backup only)
 
 * `MINIO_ACCESS_KEY`
@@ -64,6 +66,8 @@ spec:
               args:
                 - /run.sh
               env:
+                - name: TZ
+                  value: "UTC"
                 - name: MINIO_ACCESS_KEY
                   value: "some-access-key"
                 - name: MINIO_SECRET_KEY
