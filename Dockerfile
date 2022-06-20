@@ -1,4 +1,4 @@
-FROM quay.io/minio/mc:RELEASE.2022-05-09T04-08-26Z
+FROM quay.io/minio/mc:RELEASE.2022-06-17T02-52-50Z
 
 RUN microdnf update && microdnf install -y tar gzip && microdnf reinstall -y tzdata
 
