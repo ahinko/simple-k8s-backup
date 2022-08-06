@@ -15,7 +15,7 @@ LOCAL_PATH="./${BACKUP_NAME}"
 BACKUP_FILENAME=${BACKUP_NAME}-$(date +%Y%m%d_%H%M%S).tgz
 LATEST_FILENAME="latest.tgz"
 
-HEALTCHECK_URL=${HEALTCHECK_URL:-""}
+HEALTHCHECK_URL=${HEALTHCHECK_URL:-""}
 
 # Convert exclude parameter to tar args
 EXCLUDE_ARGS=""
@@ -110,8 +110,8 @@ else
     # If it isn't empty then we should do a backup
     backup
 
-    if [ "$HEALTCHECK_URL" != "" ]; then
-        echo "Curling $HEALTCHECK_URL"
-        curl -fsS -m 10 --retry 5 -o /dev/null $HEALTCHECK_URL
+    if [ "$HEALTHCHECK_URL" != "" ]; then
+        echo "Curling $HEALTHCHECK_URL"
+        curl -fsS -m 10 --retry 5 -o /dev/null $HEALTHCHECK_URL
     fi
 fi
