@@ -2,10 +2,6 @@
 
 A simple Docker container for backing up and restoring folders from within the container to a Minio server. This script is highly opinionated and tailored for my needs. **I take no responsibility so use this at your own risk.**
 
-My use case:
-
-* I have `persistent volumes` with RWX access mode in my Kubernetes cluster. This gives me the option to mount the volume to multiple pods.
-
 How the backup script in the container works:
 
 * The environment variable `BACKUP_NAME` is used to determine where the script will look for files to backup. `LOCAL_PATH` is the same as `/BACKUP_NAME` and `LOCAL_PATH` can not be changed or set using an environment variable
@@ -92,4 +88,15 @@ spec:
             - name: home-assistant-persistent-storage
               persistentVolumeClaim:
                 claimName: home-assistant-config
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchExpressions:
+                      - key: app.kubernetes.io/name
+                        operator: In
+                        values:
+                          - home-assistant
+                  topologyKey: kubernetes.io/hostname
+
 ```
