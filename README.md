@@ -49,15 +49,20 @@ metadata:
   name: backup-home-assistant
   namespace: home-automation
 spec:
-  schedule: "20 12 * * *"
+  schedule: "0 8 * * *"
   successfulJobsHistoryLimit: 0
   failedJobsHistoryLimit: 1
   jobTemplate:
     spec:
       template:
         spec:
+          initContainers:
+            - name: sleep
+              image: ghcr.io/ahinko/simple-k8s-backup:latest
+              command: ["/sleep.sh"]
+              args: ["1", "900"]
           containers:
-            - name: backup-home-assistant
+            - name: backup
               image: ghcr.io/ahinko/simple-k8s-backup:latest
               args:
                 - /run.sh
@@ -98,5 +103,4 @@ spec:
                         values:
                           - home-assistant
                   topologyKey: kubernetes.io/hostname
-
 ```
