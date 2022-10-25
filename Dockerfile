@@ -1,5 +1,5 @@
 FROM quay.io/minio/mc:RELEASE.2022-08-05T08-01-28Z AS mc
-FROM alpine:3.16.1
+FROM alpine:3.16.2
 
 COPY --from=mc /usr/bin/mc /usr/bin/mc
 
