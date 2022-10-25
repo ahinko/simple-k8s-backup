@@ -1,6 +1,10 @@
-FROM quay.io/minio/mc:RELEASE.2022-10-22T03-39-29Z
+FROM quay.io/minio/mc:RELEASE.2022-08-05T08-01-28Z AS mc
+FROM alpine:3.16.1
 
-RUN microdnf update && microdnf install -y tar gzip && microdnf reinstall -y tzdata
+COPY --from=mc /usr/bin/mc /usr/bin/mc
+
+RUN apk update && \
+  apk add --no-cache ca-certificates tar curl gzip tzdata
 
 COPY run.sh sleep.sh /
 
