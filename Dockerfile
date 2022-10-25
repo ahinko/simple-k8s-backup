@@ -4,7 +4,7 @@ FROM alpine:3.16.2
 COPY --from=mc /usr/bin/mc /usr/bin/mc
 
 RUN apk update && \
-  apk add --no-cache ca-certificates tar curl gzip tzdata
+  apk add --no-cache ca-certificates tar bash curl gzip tzdata
 
 COPY run.sh sleep.sh /
 
