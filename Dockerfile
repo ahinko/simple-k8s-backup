@@ -1,4 +1,4 @@
-FROM quay.io/minio/mc:RELEASE.2022-10-29T10-09-23Z AS mc
+FROM quay.io/minio/mc:RELEASE.2022-11-07T23-47-39Z AS mc
 FROM alpine:3.16.2
 
 COPY --from=mc /usr/bin/mc /usr/bin/mc
