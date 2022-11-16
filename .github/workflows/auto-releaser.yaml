@@ -1,0 +1,100 @@
+---
+name: Automatic release on merged pull request
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged
+
+    outputs:
+      new_version: ${{ steps.next_version.outputs.version_tag }}
+
+    steps:
+      - name: Find version increment (major, minor or patch) based on tags on pull request
+        id: bump
+        uses: zwaldowski/match-label-action@v4
+        with:
+          allowed: major, minor, patch
+
+      - name: Calculate next version number
+        id: next_version
+        uses: zwaldowski/semver-release-action@v3
+        with:
+          bump: ${{ steps.bump.outputs.match }}
+          prefix: v
+          dry_run: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "Determine tag"
+        run: 'echo "RELEASE_TAG=${{ steps.next_version.outputs.version_tag }}" >> $GITHUB_ENV'
+        shell: "bash"
+
+      - name: Create new release
+        uses: "actions/github-script@v6"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            if (!process.env.RELEASE_TAG) {
+              core.setFailed("The environment variable RELEASE_TAG is not defined.")
+              return;
+            }
+            try {
+              const response = await github.rest.repos.createRelease({
+                draft: false,
+                generate_release_notes: true,
+                name: process.env.RELEASE_TAG,
+                owner: context.repo.owner,
+                prerelease: false,
+                repo: context.repo.repo,
+                tag_name: process.env.RELEASE_TAG,
+              });
+              core.exportVariable('RELEASE_ID', response.data.id);
+              core.exportVariable('RELEASE_UPLOAD_URL', response.data.upload_url);
+            } catch (error) {
+              core.setFailed(error.message);
+            }
+
+  build:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{needs.tag.outputs.new_version}}
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{needs.release.outputs.new_version}}, ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          labels: ${{ steps.meta.outputs.labels }}

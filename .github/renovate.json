@@ -21,12 +21,12 @@
     {
       "datasources": ["docker"],
       "updateTypes": ["minor"],
-      "labels": ["renovate/image-release", "dependency/minor"]
+      "labels": ["renovate/image-release", "dependency/minor", "patch"]
     },
     {
       "datasources": ["docker"],
       "updateTypes": ["patch"],
-      "labels": ["renovate/image-release", "dependency/patch"]
+      "labels": ["renovate/image-release", "dependency/patch", "patch"]
     },
     {
       "matchDatasources": [

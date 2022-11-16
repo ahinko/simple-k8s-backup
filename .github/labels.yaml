@@ -1,4 +1,11 @@
 ---
+# Auto release
+- name: patch
+  color: "5D3FD3"
+- name: minor
+  color: "5D3FD3"
+- name: major
+  color: "5D3FD3"
 # Area
 - name: area/ci
   color: "72ccf3"
@@ -7,16 +14,16 @@
 - name: area/script
   color: "72ccf3"
 - name: area/docker
-  color: "72ccf3"
+  color: "#72ccf3"
 # Renovate
-- name: renovate/container
+- name: renovate/image-release
   color: "ffc300"
 # Semantic Type
-- name: type/patch
+- name: dependency/patch
   color: "FFEC19"
-- name: type/minor
+- name: dependency/minor
   color: "FF9800"
-- name: type/major
+- name: dependency/major
   color: "F6412D"
 # Size
 - name: size/XS
