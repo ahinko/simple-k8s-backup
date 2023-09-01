@@ -1,4 +1,4 @@
-FROM quay.io/minio/mc:RELEASE.2023-08-29T22-55-06Z AS mc
+FROM quay.io/minio/mc:RELEASE.2023-08-30T08-02-26Z AS mc
 FROM public.ecr.aws/docker/library/alpine:3.18.3
 
 COPY --from=mc /usr/bin/mc /usr/bin/mc
