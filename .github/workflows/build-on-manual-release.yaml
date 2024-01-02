@@ -1,10 +1,10 @@
 ---
-name: Build Docker image on release
+name: Build Docker image on manual release
 
 on:
   push:
     tags:
-      - "v*"
+      - "*"
 
 env:
   REGISTRY: ghcr.io
